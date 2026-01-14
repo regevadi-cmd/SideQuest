@@ -1,14 +1,19 @@
 """PostgreSQL database operations for production deployment."""
 import os
 import json
+import logging
 from datetime import datetime, date
 from typing import Optional
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.pool import QueuePool
+from sqlalchemy.pool import QueuePool, NullPool
 
 from .models import Job, Profile, Application, SavedLocation, ScheduleBlock, User
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class DatabasePG:
@@ -28,15 +33,29 @@ class DatabasePG:
             separator = "&" if "?" in self.database_url else "?"
             self.database_url = f"{self.database_url}{separator}sslmode=require"
 
-        self.engine = create_engine(
-            self.database_url,
-            poolclass=QueuePool,
-            pool_size=5,
-            max_overflow=10,
-            pool_timeout=30,
-            pool_recycle=1800
-        )
-        self._init_tables()
+        # Log connection attempt (hide password)
+        safe_url = self.database_url
+        if "@" in safe_url:
+            # Hide password in logs
+            parts = safe_url.split("@")
+            prefix = parts[0].rsplit(":", 1)[0]  # Remove password
+            safe_url = f"{prefix}:****@{parts[1]}"
+        logger.info(f"Connecting to PostgreSQL: {safe_url}")
+
+        try:
+            # Use NullPool for serverless (Streamlit Cloud) - creates fresh connections
+            self.engine = create_engine(
+                self.database_url,
+                poolclass=NullPool,  # Better for serverless
+                connect_args={
+                    "connect_timeout": 10,
+                }
+            )
+            self._init_tables()
+            logger.info("PostgreSQL connection successful")
+        except Exception as e:
+            logger.error(f"PostgreSQL connection failed: {type(e).__name__}: {str(e)}")
+            raise
 
     @contextmanager
     def _get_connection(self):
