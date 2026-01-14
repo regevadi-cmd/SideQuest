@@ -23,6 +23,11 @@ class DatabasePG:
         if self.database_url.startswith("postgres://"):
             self.database_url = self.database_url.replace("postgres://", "postgresql://", 1)
 
+        # Add SSL mode for Supabase if not already specified
+        if "sslmode" not in self.database_url:
+            separator = "&" if "?" in self.database_url else "?"
+            self.database_url = f"{self.database_url}{separator}sslmode=require"
+
         self.engine = create_engine(
             self.database_url,
             poolclass=QueuePool,
