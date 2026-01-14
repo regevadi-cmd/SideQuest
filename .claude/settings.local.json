@@ -8,7 +8,12 @@
       "WebFetch(domain:binghamton.joinhandshake.com)",
       "WebFetch(domain:www.binghamton.edu)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: SideQuest - Student Job Search Agent\n\nFeatures:\n- Multi-source job search \\(Indeed, LinkedIn, Glassdoor, College Recruiter, WayUp\\)\n- University job board integration with Handshake detection\n- Application tracker with status pipeline\n- AI-powered resume and cover letter tools \\(Claude, OpenAI, Ollama\\)\n- User authentication system\n- Profile with skills, schedule, and preferences\n- Location-based search with geocoding\n\nDeployment ready:\n- PostgreSQL adapter for Supabase\n- Environment-based database switching\n- Streamlit Cloud configuration\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
