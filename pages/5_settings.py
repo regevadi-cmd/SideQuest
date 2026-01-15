@@ -9,6 +9,8 @@ from utils.settings import load_settings
 from styles import inject_styles, hero_section, section_header, empty_state
 from utils.auth import require_auth, show_user_menu
 from utils.navigation import render_navigation
+from utils.sanitize import safe_html, safe_url
+from utils.encryption import encrypt_value, decrypt_value, mask_api_key
 
 # Page config
 st.set_page_config(
@@ -148,11 +150,12 @@ if provider == "Claude (Anthropic)":
                     st.session_state.ai_provider_name = provider
                     st.session_state.ai_api_key = api_key
                     st.session_state.ai_model = model
-                    # Save to database for persistence
+                    # Save to database for persistence (encrypt API key)
+                    encrypted_key = encrypt_value(api_key)
                     db.save_settings_dict("ai", {
                         "provider": "claude",
                         "provider_name": provider,
-                        "api_key": api_key,
+                        "api_key": encrypted_key,
                         "model": model
                     })
                     st.toast("Connection successful! Settings saved.")
@@ -193,11 +196,12 @@ elif provider == "OpenAI (GPT-5)":
                     st.session_state.ai_provider_name = provider
                     st.session_state.ai_api_key = api_key
                     st.session_state.ai_model = model
-                    # Save to database for persistence
+                    # Save to database for persistence (encrypt API key)
+                    encrypted_key = encrypt_value(api_key)
                     db.save_settings_dict("ai", {
                         "provider": "openai",
                         "provider_name": provider,
-                        "api_key": api_key,
+                        "api_key": encrypted_key,
                         "model": model
                     })
                     st.toast("Connection successful! Settings saved.")
@@ -349,10 +353,10 @@ if locations:
                 <div>
                     <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: #0F172A;
                                 font-size: 1.125rem; margin-bottom: 0.25rem;">
-                        {default_badge}{loc.name}
+                        {default_badge}{safe_html(loc.name)}
                     </div>
                     <div style="color: #475569; font-size: 0.875rem; margin-bottom: 0.5rem;">
-                        {loc.address}
+                        {safe_html(loc.address)}
                     </div>
                     <div style="color: #94A3B8; font-size: 0.75rem;">
                         📍 {loc.latitude:.4f}, {loc.longitude:.4f} · 🔍 {loc.radius_miles} mi radius
@@ -531,14 +535,191 @@ if uni_config.get("url"):
         <div style="display: flex; align-items: center; gap: 0.75rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #10B981;"></div>
             <div style="color: #10B981; font-size: 0.875rem; font-weight: 600;">
-                University Job Board Configured: {uni_config.get('name', 'Unknown')}
+                University Job Board Configured: {safe_html(uni_config.get('name', 'Unknown'))}
             </div>
         </div>
         <div style="color: #475569; font-size: 0.75rem; margin-top: 0.5rem; margin-left: 1.25rem;">
-            {uni_config.get('url', '')}
+            {safe_html(uni_config.get('url', ''))}
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+# Auto-Search Settings
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(section_header("Auto-Search"), unsafe_allow_html=True)
+
+st.markdown("""
+<div style="color: #475569; font-size: 0.875rem; margin-bottom: 1rem;">
+    Configure automatic job searches to run on a schedule.
+</div>
+""", unsafe_allow_html=True)
+
+from data.models import SearchSchedule
+
+schedule = db.get_search_schedule()
+if not schedule:
+    schedule = SearchSchedule()
+
+col1, col2 = st.columns(2)
+
+with col1:
+    auto_enabled = st.toggle(
+        "Enable Auto-Search",
+        value=schedule.enabled,
+        help="Automatically search for jobs on a schedule"
+    )
+
+    frequency = st.selectbox(
+        "Search Frequency",
+        options=["daily", "weekly"],
+        index=0 if schedule.frequency == "daily" else 1,
+        disabled=not auto_enabled
+    )
+
+with col2:
+    time_pref = st.selectbox(
+        "Preferred Time",
+        options=["morning", "afternoon", "evening"],
+        index=["morning", "afternoon", "evening"].index(schedule.time_preference) if schedule.time_preference in ["morning", "afternoon", "evening"] else 0,
+        disabled=not auto_enabled
+    )
+
+    # Show last run info
+    if schedule.last_run:
+        st.markdown(f"""
+        <div style="font-size: 0.75rem; color: #94A3B8; margin-top: 1rem;">
+            Last run: {schedule.last_run.strftime('%b %d, %Y at %I:%M %p')}
+        </div>
+        """, unsafe_allow_html=True)
+
+# Search configuration
+if auto_enabled:
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 700;
+                color: #0F172A; margin-bottom: 0.75rem;">Search Configuration</div>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        search_query = st.text_input(
+            "Search Keywords",
+            value=schedule.search_query or "",
+            placeholder="e.g., software intern, retail"
+        )
+
+        search_sources = st.multiselect(
+            "Job Sources",
+            options=["Indeed", "LinkedIn", "Glassdoor", "College Recruiter", "WayUp"],
+            default=schedule.search_sources if schedule.search_sources else ["Indeed", "LinkedIn"]
+        )
+
+    with col2:
+        # Location selector
+        locations = db.get_locations()
+        loc_names = [loc.name for loc in locations]
+        if loc_names:
+            current_loc_idx = 0
+            if schedule.search_location_id:
+                for i, loc in enumerate(locations):
+                    if loc.id == schedule.search_location_id:
+                        current_loc_idx = i
+                        break
+            selected_loc = st.selectbox(
+                "Search Location",
+                options=loc_names,
+                index=current_loc_idx
+            )
+            selected_location_id = locations[loc_names.index(selected_loc)].id if selected_loc else None
+        else:
+            st.info("Add a location first")
+            selected_location_id = None
+
+        search_job_types = st.multiselect(
+            "Job Types",
+            options=["Part-time", "Full-time", "Internship", "Contract", "Temporary"],
+            default=schedule.search_job_types if schedule.search_job_types else ["Part-time", "Internship"]
+        )
+
+if st.button("💾 Save Auto-Search Settings", use_container_width=True):
+    schedule.enabled = auto_enabled
+    schedule.frequency = frequency
+    schedule.time_preference = time_pref
+    if auto_enabled:
+        schedule.search_query = search_query
+        schedule.search_sources = search_sources
+        schedule.search_location_id = selected_location_id
+        schedule.search_job_types = search_job_types
+    db.save_search_schedule(schedule)
+    st.toast("Auto-search settings saved!")
+    st.rerun()
+
+# Notification Preferences
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(section_header("Notifications"), unsafe_allow_html=True)
+
+from data.models import NotificationPreferences
+
+notif_prefs = db.get_notification_preferences()
+if not notif_prefs:
+    notif_prefs = NotificationPreferences()
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("""
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 700;
+                color: #0F172A; margin-bottom: 0.75rem;">In-App Notifications</div>
+    """, unsafe_allow_html=True)
+
+    notify_jobs = st.checkbox(
+        "New job matches",
+        value=notif_prefs.notify_new_jobs
+    )
+
+    notify_apps = st.checkbox(
+        "Application updates",
+        value=notif_prefs.notify_application_updates
+    )
+
+with col2:
+    st.markdown("""
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 700;
+                color: #0F172A; margin-bottom: 0.75rem;">Email Notifications</div>
+    """, unsafe_allow_html=True)
+
+    email_enabled = st.checkbox(
+        "Enable email notifications",
+        value=notif_prefs.email_enabled
+    )
+
+    if email_enabled:
+        email_address = st.text_input(
+            "Email Address",
+            value=notif_prefs.email_address or "",
+            placeholder="your@email.com"
+        )
+
+        digest_freq = st.selectbox(
+            "Email Frequency",
+            options=["instant", "daily", "weekly"],
+            index=["instant", "daily", "weekly"].index(notif_prefs.digest_frequency) if notif_prefs.digest_frequency in ["instant", "daily", "weekly"] else 0
+        )
+    else:
+        email_address = notif_prefs.email_address
+        digest_freq = notif_prefs.digest_frequency
+
+if st.button("💾 Save Notification Settings", use_container_width=True):
+    notif_prefs.notify_new_jobs = notify_jobs
+    notif_prefs.notify_application_updates = notify_apps
+    notif_prefs.email_enabled = email_enabled
+    if email_enabled:
+        notif_prefs.email_address = email_address
+        notif_prefs.digest_frequency = digest_freq
+    db.save_notification_preferences(notif_prefs)
+    st.toast("Notification settings saved!")
+    st.rerun()
 
 # Data Management
 st.markdown("<br>", unsafe_allow_html=True)

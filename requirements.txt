@@ -12,3 +12,7 @@ lxml>=5.0.0
 # Database
 psycopg2-binary>=2.9.0
 sqlalchemy>=2.0.0
+# Security
+cryptography>=42.0.0
+# Email notifications
+resend>=0.7.0

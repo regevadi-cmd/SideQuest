@@ -95,3 +95,58 @@ class Application(BaseModel):
 
     # Joined field (not stored in DB)
     job: Optional[Job] = None
+
+
+class SearchSchedule(BaseModel):
+    """Automated job search schedule configuration."""
+    id: Optional[int] = None
+    user_id: int = Field(default=1, description="User ID (single user app)")
+    enabled: bool = Field(default=True, description="Whether auto-search is enabled")
+    frequency: str = Field(default="daily", description="Search frequency: daily, weekly")
+    time_preference: str = Field(default="morning", description="Preferred time: morning, afternoon, evening")
+    last_run: Optional[datetime] = Field(None, description="When auto-search last ran")
+    next_run: Optional[datetime] = Field(None, description="When to run next")
+    # Search configuration stored as dict
+    search_query: str = Field(default="", description="Keywords to search for")
+    search_location_id: Optional[int] = Field(None, description="Location ID to search")
+    search_radius: int = Field(default=10, description="Search radius in miles")
+    search_sources: list[str] = Field(default_factory=list, description="Job sources to search")
+    search_job_types: list[str] = Field(default_factory=list, description="Job types to include")
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+
+class Notification(BaseModel):
+    """User notification for new jobs, updates, etc."""
+    id: Optional[int] = None
+    type: str = Field(..., description="Type: new_jobs, application_update, system")
+    title: str = Field(..., description="Notification title")
+    message: str = Field(default="", description="Notification message")
+    related_job_ids: list[int] = Field(default_factory=list, description="Related job IDs")
+    read: bool = Field(default=False, description="Whether notification has been read")
+    email_sent: bool = Field(default=False, description="Whether email was sent")
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class SavedSearchResult(BaseModel):
+    """Result of an automated search run."""
+    id: Optional[int] = None
+    schedule_id: int = Field(..., description="Foreign key to SearchSchedule")
+    run_at: datetime = Field(default_factory=datetime.now, description="When the search ran")
+    jobs_found: int = Field(default=0, description="Total jobs found")
+    new_jobs: int = Field(default=0, description="New jobs not seen before")
+    job_ids: list[int] = Field(default_factory=list, description="IDs of found jobs")
+    error_message: Optional[str] = Field(None, description="Error if search failed")
+
+
+class NotificationPreferences(BaseModel):
+    """User preferences for notifications."""
+    id: Optional[int] = None
+    email_enabled: bool = Field(default=False, description="Whether to send email notifications")
+    email_address: Optional[str] = Field(None, description="Email address for notifications")
+    email_verified: bool = Field(default=False, description="Whether email is verified")
+    digest_frequency: str = Field(default="instant", description="Email frequency: instant, daily, weekly")
+    notify_new_jobs: bool = Field(default=True, description="Notify about new job matches")
+    notify_application_updates: bool = Field(default=True, description="Notify about application changes")
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)

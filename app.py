@@ -8,6 +8,8 @@ from styles import inject_styles, hero_section, stat_card, section_header, empty
 from utils.auth import require_auth, show_user_menu
 from utils.navigation import render_navigation
 from utils.settings import load_settings
+from utils.sanitize import safe_html
+from utils.auto_search import trigger_auto_search
 
 # Page config must be first Streamlit command
 st.set_page_config(
@@ -26,6 +28,13 @@ if "db" not in st.session_state:
 
 # Load saved settings from database
 load_settings(st.session_state.db)
+
+# Trigger auto-search check (runs if due)
+if "auto_search_checked" not in st.session_state:
+    result = trigger_auto_search(st.session_state.db)
+    if result and result.new_jobs > 0:
+        st.toast(f"Auto-search found {result.new_jobs} new jobs!")
+    st.session_state.auto_search_checked = True
 
 
 def main():
@@ -151,16 +160,16 @@ def main():
                 <div style="width: 8px; height: 8px; border-radius: 50%; background: {color};"></div>
                 <div style="flex: 1;">
                     <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; color: #0F172A;">
-                        {app.job.title}
+                        {safe_html(app.job.title)}
                     </div>
                     <div style="font-size: 0.875rem; color: #475569;">
-                        {app.job.company}
+                        {safe_html(app.job.company)}
                     </div>
                 </div>
                 <div style="font-family: 'Nunito Sans', sans-serif; font-size: 0.75rem;
                             padding: 0.35rem 0.75rem; background: rgba(99, 102, 241, 0.1);
                             border-radius: 20px; color: {color}; font-weight: 600;">
-                    {app.status}
+                    {safe_html(app.status)}
                 </div>
             </div>
             """, unsafe_allow_html=True)

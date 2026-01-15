@@ -8,6 +8,7 @@ from data.models import Application
 from styles import inject_styles, hero_section, section_header, empty_state, pipeline_stage
 from utils.auth import require_auth, show_user_menu
 from utils.navigation import render_navigation
+from utils.sanitize import safe_html, safe_url
 
 # Page config
 st.set_page_config(
@@ -165,8 +166,9 @@ def render_applications(apps, key_prefix: str = ""):
                 if app.job.id:
                     full_job = db.get_job(app.job.id)
                     if full_job and full_job.url:
+                        job_url = safe_url(full_job.url)
                         st.markdown(f"""
-                        <a href="{full_job.url}" target="_blank"
+                        <a href="{job_url}" target="_blank"
                            style="display: block; padding: 0.75rem; background: rgba(8, 145, 178, 0.1);
                                   border: 1px solid rgba(8, 145, 178, 0.2); border-radius: 8px;
                                   text-align: center; color: #0891B2; font-size: 0.875rem;

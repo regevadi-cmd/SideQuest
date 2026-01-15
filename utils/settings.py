@@ -1,6 +1,7 @@
 """Settings loading utility for persisted app settings."""
 import streamlit as st
 from data.db_factory import Database
+from utils.encryption import decrypt_value
 
 
 def load_settings(db: Database) -> None:
@@ -18,7 +19,9 @@ def load_settings(db: Database) -> None:
         if ai_settings.get("provider"):
             st.session_state.ai_provider = ai_settings.get("provider")
         st.session_state.ai_provider_name = ai_settings.get("provider_name", "Claude (Anthropic)")
-        st.session_state.ai_api_key = ai_settings.get("api_key", "")
+        # Decrypt API key when loading
+        encrypted_key = ai_settings.get("api_key", "")
+        st.session_state.ai_api_key = decrypt_value(encrypted_key) if encrypted_key else ""
         st.session_state.ai_model = ai_settings.get("model", "")
         st.session_state.ollama_url = ai_settings.get("ollama_url", "http://localhost:11434")
 

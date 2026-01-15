@@ -8,7 +8,10 @@ from pathlib import Path
 from typing import Optional
 from contextlib import contextmanager
 
-from .models import Job, Profile, Application, SavedLocation, ScheduleBlock, User
+from .models import (
+    Job, Profile, Application, SavedLocation, ScheduleBlock, User,
+    SearchSchedule, Notification, SavedSearchResult, NotificationPreferences
+)
 
 
 class Database:
@@ -116,6 +119,60 @@ class Database:
                     value TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS search_schedules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER DEFAULT 1,
+                    enabled INTEGER DEFAULT 1,
+                    frequency TEXT DEFAULT 'daily',
+                    time_preference TEXT DEFAULT 'morning',
+                    last_run TEXT,
+                    next_run TEXT,
+                    search_query TEXT DEFAULT '',
+                    search_location_id INTEGER,
+                    search_radius INTEGER DEFAULT 10,
+                    search_sources TEXT DEFAULT '[]',
+                    search_job_types TEXT DEFAULT '[]',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    message TEXT DEFAULT '',
+                    related_job_ids TEXT DEFAULT '[]',
+                    read INTEGER DEFAULT 0,
+                    email_sent INTEGER DEFAULT 0,
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS saved_search_results (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    schedule_id INTEGER NOT NULL,
+                    run_at TEXT NOT NULL,
+                    jobs_found INTEGER DEFAULT 0,
+                    new_jobs INTEGER DEFAULT 0,
+                    job_ids TEXT DEFAULT '[]',
+                    error_message TEXT,
+                    FOREIGN KEY (schedule_id) REFERENCES search_schedules(id)
+                );
+
+                CREATE TABLE IF NOT EXISTS notification_preferences (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email_enabled INTEGER DEFAULT 0,
+                    email_address TEXT,
+                    email_verified INTEGER DEFAULT 0,
+                    digest_frequency TEXT DEFAULT 'instant',
+                    notify_new_jobs INTEGER DEFAULT 1,
+                    notify_application_updates INTEGER DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+                CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
             """)
 
             # Migration: Add preferred_job_sources column if it doesn't exist
@@ -544,3 +601,216 @@ class Database:
                 except (json.JSONDecodeError, TypeError):
                     result[key] = value
             return result
+
+    # Search Schedule operations
+    def save_search_schedule(self, schedule: SearchSchedule) -> SearchSchedule:
+        """Save or update a search schedule."""
+        now = datetime.now().isoformat()
+        last_run = schedule.last_run.isoformat() if schedule.last_run else None
+        next_run = schedule.next_run.isoformat() if schedule.next_run else None
+
+        with self._get_connection() as conn:
+            if schedule.id:
+                conn.execute("""
+                    UPDATE search_schedules SET user_id=?, enabled=?, frequency=?,
+                    time_preference=?, last_run=?, next_run=?, search_query=?,
+                    search_location_id=?, search_radius=?, search_sources=?,
+                    search_job_types=?, updated_at=? WHERE id=?
+                """, (schedule.user_id, int(schedule.enabled), schedule.frequency,
+                      schedule.time_preference, last_run, next_run, schedule.search_query,
+                      schedule.search_location_id, schedule.search_radius,
+                      json.dumps(schedule.search_sources), json.dumps(schedule.search_job_types),
+                      now, schedule.id))
+            else:
+                cursor = conn.execute("""
+                    INSERT INTO search_schedules (user_id, enabled, frequency, time_preference,
+                    last_run, next_run, search_query, search_location_id, search_radius,
+                    search_sources, search_job_types, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (schedule.user_id, int(schedule.enabled), schedule.frequency,
+                      schedule.time_preference, last_run, next_run, schedule.search_query,
+                      schedule.search_location_id, schedule.search_radius,
+                      json.dumps(schedule.search_sources), json.dumps(schedule.search_job_types),
+                      now, now))
+                schedule.id = cursor.lastrowid
+        return schedule
+
+    def get_search_schedule(self) -> Optional[SearchSchedule]:
+        """Get the search schedule (single user app)."""
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM search_schedules LIMIT 1").fetchone()
+            if not row:
+                return None
+            return SearchSchedule(
+                id=row["id"], user_id=row["user_id"], enabled=bool(row["enabled"]),
+                frequency=row["frequency"], time_preference=row["time_preference"],
+                last_run=datetime.fromisoformat(row["last_run"]) if row["last_run"] else None,
+                next_run=datetime.fromisoformat(row["next_run"]) if row["next_run"] else None,
+                search_query=row["search_query"],
+                search_location_id=row["search_location_id"],
+                search_radius=row["search_radius"],
+                search_sources=json.loads(row["search_sources"]) if row["search_sources"] else [],
+                search_job_types=json.loads(row["search_job_types"]) if row["search_job_types"] else [],
+                created_at=datetime.fromisoformat(row["created_at"]),
+                updated_at=datetime.fromisoformat(row["updated_at"])
+            )
+
+    def delete_search_schedule(self, schedule_id: int):
+        """Delete a search schedule."""
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM search_schedules WHERE id = ?", (schedule_id,))
+
+    # Notification operations
+    def save_notification(self, notification: Notification) -> Notification:
+        """Save a new notification."""
+        with self._get_connection() as conn:
+            if notification.id:
+                conn.execute("""
+                    UPDATE notifications SET type=?, title=?, message=?, related_job_ids=?,
+                    read=?, email_sent=? WHERE id=?
+                """, (notification.type, notification.title, notification.message,
+                      json.dumps(notification.related_job_ids), int(notification.read),
+                      int(notification.email_sent), notification.id))
+            else:
+                cursor = conn.execute("""
+                    INSERT INTO notifications (type, title, message, related_job_ids, read, email_sent, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (notification.type, notification.title, notification.message,
+                      json.dumps(notification.related_job_ids), int(notification.read),
+                      int(notification.email_sent), datetime.now().isoformat()))
+                notification.id = cursor.lastrowid
+        return notification
+
+    def get_notifications(self, unread_only: bool = False, limit: int = 50) -> list[Notification]:
+        """Get notifications, optionally filtered to unread only."""
+        with self._get_connection() as conn:
+            if unread_only:
+                rows = conn.execute(
+                    "SELECT * FROM notifications WHERE read = 0 ORDER BY created_at DESC LIMIT ?",
+                    (limit,)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?",
+                    (limit,)
+                ).fetchall()
+
+            return [Notification(
+                id=row["id"], type=row["type"], title=row["title"], message=row["message"],
+                related_job_ids=json.loads(row["related_job_ids"]) if row["related_job_ids"] else [],
+                read=bool(row["read"]), email_sent=bool(row["email_sent"]),
+                created_at=datetime.fromisoformat(row["created_at"])
+            ) for row in rows]
+
+    def get_unread_notification_count(self) -> int:
+        """Get count of unread notifications."""
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT COUNT(*) as count FROM notifications WHERE read = 0").fetchone()
+            return row["count"]
+
+    def mark_notification_read(self, notification_id: int):
+        """Mark a notification as read."""
+        with self._get_connection() as conn:
+            conn.execute("UPDATE notifications SET read = 1 WHERE id = ?", (notification_id,))
+
+    def mark_all_notifications_read(self):
+        """Mark all notifications as read."""
+        with self._get_connection() as conn:
+            conn.execute("UPDATE notifications SET read = 1")
+
+    def delete_notification(self, notification_id: int):
+        """Delete a notification."""
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM notifications WHERE id = ?", (notification_id,))
+
+    def clear_all_notifications(self):
+        """Delete all notifications."""
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM notifications")
+
+    # Saved Search Result operations
+    def save_search_result(self, result: SavedSearchResult) -> SavedSearchResult:
+        """Save a search result record."""
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                INSERT INTO saved_search_results (schedule_id, run_at, jobs_found, new_jobs, job_ids, error_message)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (result.schedule_id, result.run_at.isoformat(), result.jobs_found,
+                  result.new_jobs, json.dumps(result.job_ids), result.error_message))
+            result.id = cursor.lastrowid
+        return result
+
+    def get_search_results(self, schedule_id: int = None, limit: int = 10) -> list[SavedSearchResult]:
+        """Get search results, optionally filtered by schedule."""
+        with self._get_connection() as conn:
+            if schedule_id:
+                rows = conn.execute(
+                    "SELECT * FROM saved_search_results WHERE schedule_id = ? ORDER BY run_at DESC LIMIT ?",
+                    (schedule_id, limit)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM saved_search_results ORDER BY run_at DESC LIMIT ?",
+                    (limit,)
+                ).fetchall()
+
+            return [SavedSearchResult(
+                id=row["id"], schedule_id=row["schedule_id"],
+                run_at=datetime.fromisoformat(row["run_at"]),
+                jobs_found=row["jobs_found"], new_jobs=row["new_jobs"],
+                job_ids=json.loads(row["job_ids"]) if row["job_ids"] else [],
+                error_message=row["error_message"]
+            ) for row in rows]
+
+    # Notification Preferences operations
+    def save_notification_preferences(self, prefs: NotificationPreferences) -> NotificationPreferences:
+        """Save notification preferences."""
+        now = datetime.now().isoformat()
+        with self._get_connection() as conn:
+            if prefs.id:
+                conn.execute("""
+                    UPDATE notification_preferences SET email_enabled=?, email_address=?,
+                    email_verified=?, digest_frequency=?, notify_new_jobs=?,
+                    notify_application_updates=?, updated_at=? WHERE id=?
+                """, (int(prefs.email_enabled), prefs.email_address, int(prefs.email_verified),
+                      prefs.digest_frequency, int(prefs.notify_new_jobs),
+                      int(prefs.notify_application_updates), now, prefs.id))
+            else:
+                cursor = conn.execute("""
+                    INSERT INTO notification_preferences (email_enabled, email_address, email_verified,
+                    digest_frequency, notify_new_jobs, notify_application_updates, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (int(prefs.email_enabled), prefs.email_address, int(prefs.email_verified),
+                      prefs.digest_frequency, int(prefs.notify_new_jobs),
+                      int(prefs.notify_application_updates), now, now))
+                prefs.id = cursor.lastrowid
+        return prefs
+
+    def get_notification_preferences(self) -> Optional[NotificationPreferences]:
+        """Get notification preferences (single user app)."""
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM notification_preferences LIMIT 1").fetchone()
+            if not row:
+                return None
+            return NotificationPreferences(
+                id=row["id"], email_enabled=bool(row["email_enabled"]),
+                email_address=row["email_address"], email_verified=bool(row["email_verified"]),
+                digest_frequency=row["digest_frequency"],
+                notify_new_jobs=bool(row["notify_new_jobs"]),
+                notify_application_updates=bool(row["notify_application_updates"]),
+                created_at=datetime.fromisoformat(row["created_at"]),
+                updated_at=datetime.fromisoformat(row["updated_at"])
+            )
+
+    def get_location(self, location_id: int) -> Optional[SavedLocation]:
+        """Get a single location by ID."""
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM locations WHERE id = ?", (location_id,)).fetchone()
+            if not row:
+                return None
+            return SavedLocation(
+                id=row["id"], name=row["name"], address=row["address"],
+                latitude=row["latitude"], longitude=row["longitude"],
+                radius_miles=row["radius_miles"], is_default=bool(row["is_default"]),
+                created_at=datetime.fromisoformat(row["created_at"])
+            )

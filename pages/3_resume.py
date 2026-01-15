@@ -6,6 +6,7 @@ from data.db_factory import Database
 from styles import inject_styles, hero_section, section_header, empty_state, feature_card
 from utils.auth import require_auth, show_user_menu
 from utils.navigation import render_navigation
+from utils.sanitize import safe_html
 
 # Page config
 st.set_page_config(
@@ -152,9 +153,9 @@ with tab_cover:
                     <div style="color: #94A3B8; font-size: 0.75rem; text-transform: uppercase;
                                 margin-bottom: 0.5rem; font-weight: 600;">Selected Job</div>
                     <div style="font-family: 'Plus Jakarta Sans', sans-serif; color: #0F172A; font-weight: 700;">
-                        {job_title}
+                        {safe_html(job_title)}
                     </div>
-                    <div style="color: #0891B2; font-size: 0.875rem; font-weight: 600;">{company_name}</div>
+                    <div style="color: #0891B2; font-size: 0.875rem; font-weight: 600;">{safe_html(company_name)}</div>
                 </div>
                 """, unsafe_allow_html=True)
     else:
@@ -237,7 +238,7 @@ with tab_cover:
                     st.markdown(f"""
                     <div style="background: #FFFFFF; border: 1px solid #E2E8F0;
                                 border-radius: 16px; padding: 1.5rem; line-height: 1.7; color: #475569;">
-                        {cover_letter.replace(chr(10), '<br>')}
+                        {safe_html(cover_letter).replace(chr(10), '<br>')}
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -302,7 +303,7 @@ with tab_resume:
                     st.markdown(f"""
                     <div style="background: #FFFFFF; border: 1px solid #E2E8F0;
                                 border-radius: 16px; padding: 1.5rem; line-height: 1.7; color: #475569;">
-                        {suggestions.replace(chr(10), '<br>')}
+                        {safe_html(suggestions).replace(chr(10), '<br>')}
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -357,7 +358,7 @@ with tab_analyze:
                             <div style="display: inline-block; padding: 0.5rem 1rem;
                                         background: rgba(249, 115, 22, 0.1); border-radius: 20px;
                                         color: #F97316; font-size: 0.875rem; margin: 0.25rem; font-weight: 600;">
-                                {skill}
+                                {safe_html(skill)}
                             </div>
                             """, unsafe_allow_html=True)
 
@@ -373,7 +374,7 @@ with tab_analyze:
                             <div style="display: inline-block; padding: 0.5rem 1rem;
                                         background: rgba(8, 145, 178, 0.1); border-radius: 20px;
                                         color: #0891B2; font-size: 0.875rem; margin: 0.25rem; font-weight: 600;">
-                                {skill}
+                                {safe_html(skill)}
                             </div>
                             """, unsafe_allow_html=True)
 
@@ -389,7 +390,7 @@ with tab_analyze:
                                         border-left: 3px solid #10B981; border-radius: 0 8px 8px 0;
                                         margin-bottom: 0.5rem; color: #475569; font-size: 0.875rem;
                                         border: 1px solid #E2E8F0; border-left: 3px solid #10B981;">
-                                {resp}
+                                {safe_html(resp)}
                             </div>
                             """, unsafe_allow_html=True)
 
@@ -400,7 +401,7 @@ with tab_analyze:
                                         border-radius: 12px; padding: 1rem;">
                                 <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;
                                             color: #F59E0B; margin-bottom: 0.25rem;">Estimated Salary</div>
-                                <div style="color: #475569;">{analysis["salary_estimate"]}</div>
+                                <div style="color: #475569;">{safe_html(analysis["salary_estimate"])}</div>
                             </div>
                             """, unsafe_allow_html=True)
 

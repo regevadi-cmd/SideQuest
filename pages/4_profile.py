@@ -8,6 +8,7 @@ from utils.schedule import parse_schedule, format_availability_summary, DAYS_OF_
 from styles import inject_styles, hero_section, section_header
 from utils.auth import require_auth, show_user_menu
 from utils.navigation import render_navigation
+from utils.sanitize import safe_html
 
 # Page config
 st.set_page_config(
@@ -220,13 +221,13 @@ if schedule_method == "Visual Editor":
         for i, block in enumerate(schedule_blocks):
             col1, col2 = st.columns([5, 1])
             with col1:
-                label_str = f" - {block.label}" if block.label else ""
+                label_str = f" - {safe_html(block.label)}" if block.label else ""
                 st.markdown(f"""
                 <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem;
                             background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; margin-bottom: 0.5rem;">
                     <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: #0891B2;
-                                min-width: 40px;">{block.day}</div>
-                    <div style="color: #0F172A;">{block.start_time} - {block.end_time}</div>
+                                min-width: 40px;">{safe_html(block.day)}</div>
+                    <div style="color: #0F172A;">{safe_html(block.start_time)} - {safe_html(block.end_time)}</div>
                     <div style="color: #94A3B8;">{label_str}</div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -270,7 +271,7 @@ if schedule_blocks:
             Availability Summary
         </div>
         <div style="color: #475569; font-size: 0.875rem; white-space: pre-line;">
-            {summary}
+            {safe_html(summary)}
         </div>
     </div>
     """, unsafe_allow_html=True)

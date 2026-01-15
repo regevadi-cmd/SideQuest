@@ -9,6 +9,8 @@ from styles import inject_styles, hero_section, section_header, job_card, empty_
 from utils.auth import require_auth, show_user_menu
 from utils.navigation import render_navigation
 from utils.settings import load_settings
+from utils.sanitize import safe_html, safe_url
+from utils.rate_limiter import check_search_rate_limit
 
 # Page config
 st.set_page_config(
@@ -170,12 +172,12 @@ with st.sidebar:
     # Search button
     search_clicked = st.button("🔍 Search Jobs", type="primary", use_container_width=True)
 
-# Main content
+# Main content - sanitize location name to prevent XSS
 st.markdown(f"""
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
     <span style="color: #475569;">Searching near</span>
     <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; color: #0891B2;">
-        {selected_location.name}
+        {safe_html(selected_location.name)}
     </span>
     <span style="color: #94A3B8;">· {radius} mile radius</span>
 </div>
@@ -189,6 +191,12 @@ if search_clicked:
     if not job_sources:
         st.error("Please select at least one job source")
     else:
+        # Check rate limit
+        allowed, rate_msg = check_search_rate_limit()
+        if not allowed:
+            st.error(rate_msg)
+            st.stop()
+
         # Import scrapers
         from scrapers.indeed import IndeedScraper
         from scrapers.linkedin import LinkedInScraper
