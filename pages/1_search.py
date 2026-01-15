@@ -5,7 +5,10 @@ from datetime import datetime
 from config import DB_PATH, JOB_TYPES, DEFAULT_RADIUS_MILES
 from data.db_factory import Database
 from data.models import Job, Application
-from styles import inject_styles, hero_section, section_header, job_card, empty_state
+from styles import (
+    inject_styles, hero_section, section_header, job_card, empty_state,
+    skeleton_job_card, loading_indicator
+)
 from utils.auth import require_auth, show_user_menu
 from utils.navigation import render_navigation
 from utils.settings import load_settings
@@ -211,6 +214,10 @@ if search_clicked:
         # Create progress container
         progress_container = st.empty()
         status_container = st.empty()
+        skeleton_container = st.empty()
+
+        # Show skeleton loaders while searching
+        skeleton_container.markdown(skeleton_job_card(5), unsafe_allow_html=True)
 
         total_sources = len(job_sources)
         for idx, source in enumerate(job_sources):
@@ -266,9 +273,10 @@ if search_clicked:
             except Exception as e:
                 errors.append(f"{source}: {str(e)}")
 
-        # Clear progress
+        # Clear progress and skeleton loaders
         progress_container.empty()
         status_container.empty()
+        skeleton_container.empty()
 
         # Save all jobs to database
         for job in all_jobs:

@@ -32,6 +32,8 @@ THEME_CSS = """
     --accent-emerald: #10B981;
     --accent-amber: #F59E0B;
     --accent-rose: #F43F5E;
+    --accent-danger: #DC2626;
+    --accent-danger-dark: #B91C1C;
 
     /* Text colors */
     --text-primary: #0F172A;
@@ -43,6 +45,7 @@ THEME_CSS = """
     --gradient-coral: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
     --gradient-indigo: linear-gradient(135deg, #4F46E5 0%, #818CF8 100%);
     --gradient-hero: linear-gradient(135deg, #EFF6FF 0%, #F0FDFA 50%, #FFF7ED 100%);
+    --gradient-danger: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
 
     /* Shadows */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -60,6 +63,15 @@ THEME_CSS = """
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
+
+    /* Spacing system */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
 }
 
 /* Base overrides */
@@ -760,6 +772,553 @@ a:hover {
 .animate-pulse {
     animation: pulse 2s ease-in-out infinite;
 }
+
+/* ========================================
+   MOBILE RESPONSIVENESS
+   ======================================== */
+
+/* Tablet breakpoint */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding: 1rem 1.5rem !important;
+    }
+
+    h1 {
+        font-size: 1.75rem !important;
+    }
+
+    /* Top navigation responsive */
+    .top-nav {
+        padding: 0.5rem 0.75rem;
+        gap: 0.25rem;
+    }
+
+    .top-nav-brand {
+        font-size: 1rem;
+        margin-right: 0.5rem;
+    }
+
+    .top-nav-link {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.5rem;
+    }
+
+    [data-testid="stPageLink"] a {
+        font-size: 0.7rem !important;
+        padding: 0.375rem 0.5rem !important;
+    }
+
+    /* Hero section responsive */
+    .hero-section {
+        padding: 1.5rem;
+    }
+
+    .hero-title {
+        font-size: 1.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 0.9375rem;
+    }
+
+    /* Stat cards responsive */
+    .stat-card {
+        padding: 1.25rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+    }
+
+    /* Pipeline responsive - horizontal scroll */
+    .pipeline-container {
+        gap: 0.5rem;
+    }
+
+    .pipeline-stage {
+        min-width: 100px;
+        padding: 1rem;
+    }
+
+    .pipeline-count {
+        font-size: 1.5rem;
+    }
+
+    /* Job cards responsive */
+    .job-card {
+        padding: 1rem;
+    }
+
+    .job-card-title {
+        font-size: 1rem;
+    }
+
+    .job-card-meta {
+        gap: 0.375rem;
+    }
+
+    .job-tag {
+        font-size: 0.6875rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Feature cards responsive */
+    .feature-card {
+        padding: 1.25rem;
+    }
+
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+
+    /* Section headers */
+    .section-header {
+        margin: 1.5rem 0 1rem 0;
+    }
+
+    .section-title {
+        font-size: 1.125rem;
+    }
+}
+
+/* Mobile breakpoint */
+@media (max-width: 480px) {
+    .main .block-container {
+        padding: 0.75rem 1rem !important;
+    }
+
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    /* Top nav mobile - wrap and center */
+    .top-nav {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .top-nav-brand {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+
+    .top-nav-links {
+        justify-content: center;
+    }
+
+    .top-nav-link {
+        font-size: 0.6875rem;
+        padding: 0.375rem 0.5rem;
+    }
+
+    [data-testid="stPageLink"] a {
+        font-size: 0.65rem !important;
+        padding: 0.3rem 0.4rem !important;
+    }
+
+    /* Hero mobile */
+    .hero-section {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .hero-title {
+        font-size: 1.25rem;
+    }
+
+    .hero-subtitle {
+        font-size: 0.875rem;
+    }
+
+    /* Stats mobile */
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+    }
+
+    .stat-label {
+        font-size: 0.625rem;
+    }
+
+    /* Pipeline mobile */
+    .pipeline-stage {
+        min-width: 85px;
+        padding: 0.75rem;
+    }
+
+    .pipeline-count {
+        font-size: 1.25rem;
+    }
+
+    .pipeline-label {
+        font-size: 0.625rem;
+    }
+
+    /* Job cards mobile */
+    .job-card {
+        padding: 0.875rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .job-card-title {
+        font-size: 0.9375rem;
+    }
+
+    .job-card-company {
+        font-size: 0.8125rem;
+    }
+
+    /* Empty state mobile */
+    .empty-state {
+        padding: 2rem 1.5rem;
+    }
+
+    .empty-state-icon {
+        font-size: 2.5rem;
+    }
+
+    .empty-state-title {
+        font-size: 1rem;
+    }
+
+    /* Buttons - ensure touch targets are at least 44px */
+    .stButton button {
+        min-height: 44px !important;
+        padding: 0.75rem 1rem !important;
+    }
+
+    /* Form inputs - larger touch targets */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea {
+        min-height: 44px !important;
+        padding: 0.875rem 1rem !important;
+    }
+}
+
+/* Small mobile breakpoint */
+@media (max-width: 375px) {
+    .main .block-container {
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .top-nav-link {
+        font-size: 0.625rem;
+        padding: 0.25rem 0.375rem;
+    }
+
+    [data-testid="stPageLink"] a {
+        font-size: 0.6rem !important;
+        padding: 0.25rem 0.35rem !important;
+    }
+
+    .job-card-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ========================================
+   SKELETON LOADERS & LOADING STATES
+   ======================================== */
+
+/* Skeleton base */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        #E2E8F0 0%,
+        #F1F5F9 50%,
+        #E2E8F0 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+}
+
+/* Skeleton job card */
+.skeleton-job-card {
+    background: var(--bg-card);
+    border: var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.skeleton-title {
+    height: 1.25rem;
+    width: 60%;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-company {
+    height: 1rem;
+    width: 45%;
+    margin-bottom: 1rem;
+}
+
+.skeleton-tags {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.skeleton-tag {
+    height: 1.5rem;
+    width: 80px;
+    border-radius: 100px;
+}
+
+/* Skeleton stat card */
+.skeleton-stat-card {
+    background: var(--bg-card);
+    border: var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: 1.75rem;
+    text-align: center;
+}
+
+.skeleton-stat-value {
+    height: 2.5rem;
+    width: 60%;
+    margin: 0 auto 0.5rem auto;
+}
+
+.skeleton-stat-label {
+    height: 0.75rem;
+    width: 80%;
+    margin: 0 auto;
+}
+
+/* Loading spinner overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 250, 252, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #E2E8F0;
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Loading button state */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-top: -8px;
+    margin-left: -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+/* ========================================
+   BUTTON VARIANTS & FORM STATES
+   ======================================== */
+
+/* Danger/Delete button */
+.btn-danger,
+.stButton button.btn-danger,
+[data-testid="stButton"] button.btn-danger {
+    background: var(--accent-danger) !important;
+    background-color: var(--accent-danger) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+}
+
+.btn-danger:hover,
+.stButton button.btn-danger:hover,
+[data-testid="stButton"] button.btn-danger:hover {
+    background: var(--accent-danger-dark) !important;
+    background-color: var(--accent-danger-dark) !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35) !important;
+}
+
+/* Ghost/Subtle button */
+.btn-ghost {
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.btn-ghost:hover {
+    background: var(--bg-card-hover) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Small button variant */
+.btn-sm {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.75rem !important;
+    min-height: auto !important;
+}
+
+/* Disabled state */
+.stButton button:disabled,
+[data-testid="stButton"] button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Form validation states */
+.stTextInput.error > div > div > input,
+.stTextArea.error > div > div > textarea {
+    border-color: var(--accent-danger) !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+}
+
+.stTextInput.success > div > div > input,
+.stTextArea.success > div > div > textarea {
+    border-color: var(--accent-emerald) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Required field indicator */
+.required-field::after {
+    content: ' *';
+    color: var(--accent-danger);
+    font-weight: 600;
+}
+
+/* Helper/error text */
+.field-error {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.75rem;
+    color: var(--accent-danger);
+    margin-top: 0.25rem;
+}
+
+.field-hint {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ======================================== */
+
+/* Focus indicators for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--accent-primary) !important;
+    outline-offset: 2px !important;
+}
+
+.stButton button:focus-visible,
+[data-testid="stButton"] button:focus-visible {
+    outline: 2px solid var(--accent-primary) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.2) !important;
+}
+
+/* Input focus visible */
+.stTextInput > div > div > input:focus-visible,
+.stTextArea > div > div > textarea:focus-visible,
+[data-testid="stSelectbox"] > div > div:focus-within {
+    outline: 2px solid var(--accent-primary) !important;
+    outline-offset: 1px !important;
+}
+
+/* Link focus */
+a:focus-visible {
+    outline: 2px solid var(--accent-primary) !important;
+    outline-offset: 2px !important;
+    border-radius: 2px;
+}
+
+/* Skip link for screen readers */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--accent-primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    z-index: 10000;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .skeleton {
+        animation: none;
+        background: #E2E8F0;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .job-card {
+        border-width: 2px;
+    }
+
+    .stButton button {
+        border: 2px solid currentColor !important;
+    }
+
+    .job-tag {
+        border-width: 2px;
+    }
+}
+
+/* Screen reader only utility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 </style>
 """
 
@@ -1258,4 +1817,77 @@ def top_navigation(current_page: str = "") -> str:
             {links_html}
         </div>
     </div>
+    """
+
+
+def skeleton_job_card(count: int = 1) -> str:
+    """Generate HTML for skeleton job card loaders."""
+    cards_html = ""
+    for i in range(count):
+        delay = i * 0.1
+        cards_html += f"""
+        <div class="skeleton-job-card" style="animation-delay: {delay}s;">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-company"></div>
+            <div class="skeleton-tags">
+                <div class="skeleton skeleton-tag"></div>
+                <div class="skeleton skeleton-tag"></div>
+                <div class="skeleton skeleton-tag"></div>
+            </div>
+        </div>
+        """
+    return cards_html
+
+
+def skeleton_stat_card(count: int = 1) -> str:
+    """Generate HTML for skeleton stat card loaders."""
+    cards_html = ""
+    for i in range(count):
+        delay = i * 0.1
+        cards_html += f"""
+        <div class="skeleton-stat-card" style="animation-delay: {delay}s;">
+            <div class="skeleton skeleton-stat-value"></div>
+            <div class="skeleton skeleton-stat-label"></div>
+        </div>
+        """
+    return cards_html
+
+
+def loading_spinner() -> str:
+    """Generate HTML for a loading spinner overlay."""
+    return """
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+    """
+
+
+def loading_indicator(text: str = "Loading...") -> str:
+    """Generate HTML for an inline loading indicator."""
+    return f"""
+    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem;">
+        <div class="loading-spinner" style="width: 24px; height: 24px; border-width: 3px;"></div>
+        <span style="font-family: 'Nunito Sans', sans-serif; color: var(--text-secondary);">{text}</span>
+    </div>
+    """
+
+
+def danger_button_styles() -> str:
+    """Return CSS to apply danger styling to Streamlit buttons using :has selector."""
+    return """
+    <style>
+    /* Danger button styling for buttons with specific labels */
+    .stButton:has(button:contains("Delete")),
+    .stButton:has(button:contains("Remove")),
+    .stButton:has(button:contains("Clear")) {
+        button {
+            background: #DC2626 !important;
+            background-color: #DC2626 !important;
+        }
+        button:hover {
+            background: #B91C1C !important;
+            background-color: #B91C1C !important;
+        }
+    }
+    </style>
     """
